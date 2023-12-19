@@ -1,3 +1,4 @@
+import json
 from math import floor
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -33,7 +34,8 @@ class DatabaseManager():
 
     _valid_symbols = [
         'BTCUSDT',
-        'SHIBUSDT'
+        'SHIBUSDT',
+        'ETHUSDT'
     ]
 
     # See https://binance-docs.github.io/apidocs/delivery/en/
@@ -124,6 +126,10 @@ class DatabaseManager():
         -------
         None
         """
+        symbols = json.loads(symbols)
+        intervals = json.loads(intervals)
+
+        self._logger.info("updating database with new klines, please wait...")
         # For each symbol and interval, get missing klines data
         for symbol in symbols:
 
@@ -150,6 +156,8 @@ class DatabaseManager():
                 self._logger.debug("checking for new data for "
                                    f"'{symbol} {interval}'")
                 self._get_missing_klines(symbol, interval, client_manager)
+        
+        self._logger.info("klines database is up to date")
 
     def _get_missing_klines(self, symbol, interval, client_manager):
         '''
@@ -276,15 +284,15 @@ class DatabaseManager():
             if not reverse:
                 # Set start time to the time of the next klines entry
                 start_time_ms_since_utc = self._get_next_klines_start_time(
-                    last_time_ms_since_utc = end_time_ms_since_utc,
-                    interval = interval,
-                    klines_limit = 1
+                    last_time_ms_since_utc=end_time_ms_since_utc,
+                    interval=interval,
+                    klines_limit=1
                 ) 
                 # Set end time to the time of the klines 1500 entries later
                 end_time_ms_since_utc = self._get_next_klines_start_time(
-                    last_time_ms_since_utc = start_time_ms_since_utc,
-                    interval = interval,
-                    klines_limit = klines_max_limit
+                    last_time_ms_since_utc=start_time_ms_since_utc,
+                    interval=interval,
+                    klines_limit=klines_max_limit
                 )
 
                 # Break if new start time is past the current time
@@ -301,10 +309,10 @@ class DatabaseManager():
 
                 # Set the start time to the time of the klines 1500 entries earlier
                 start_time_ms_since_utc = self._get_next_klines_start_time(
-                    last_time_ms_since_utc = start_time_ms_since_utc,
-                    interval = interval,
-                    klines_limit = klines_max_limit,
-                    reverse = True
+                    last_time_ms_since_utc=start_time_ms_since_utc,
+                    interval=interval,
+                    klines_limit=klines_max_limit,
+                    reverse=True
                 )
 
             # take floor of start and end times to ensure when converted from ms to s there is no decimal values

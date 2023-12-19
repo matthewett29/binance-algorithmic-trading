@@ -1,6 +1,5 @@
 #!python3
 import logging
-from pprint import pprint
 from binance_algorithmic_trading.logger import Logger
 from binance_algorithmic_trading.config import get_config
 from binance_algorithmic_trading.database_manager import DatabaseManager
@@ -20,14 +19,14 @@ def main():
     config = get_config()
 
     # Initialise binance API client manager and connect
-    # API key/secret are required for user data endpoints
+    # using the API key/secret from app.cfg
     client_manager = ClientManager(
         log_level=logging.DEBUG,
         config=config['binance']
     )
 
-    # Get binance exchange information for 'BTCUSDT'
-    # _ = client_manager.get_exchange_info(symbols=['BTCUSDT'])
+    # Get binance exchange info
+    client_manager.get_exchange_info()
 
     # Initialise database
     database_manager = DatabaseManager(
@@ -38,8 +37,8 @@ def main():
     # Update database with all new data from binance
     # for the symbols and intervals enabled in the config file
     database_manager.update_klines(
-        symbols=config['symbols'],
-        intervals=config['intervals'],
+        symbols=config['binance']['SYMBOLS'],
+        intervals=config['binance']['INTERVALS'],
         client_manager=client_manager
     )
 

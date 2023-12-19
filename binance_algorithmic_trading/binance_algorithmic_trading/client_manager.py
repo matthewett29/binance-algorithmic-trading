@@ -1,4 +1,5 @@
 import binance
+import json
 from binance.spot import Spot as Client
 from datetime import datetime, timedelta
 from binance_algorithmic_trading.logger import Logger
@@ -46,86 +47,80 @@ class ClientManager():
             Dictionary containing the configuration settings for the Binance
             client connection, including API key and secret
         '''
-        self.x_mbx_used_weight = 0
-        self.x_mbx_used_weight_1m = 0
-        self.timeout = 5
-        self.show_limit_usage = True
-        self.local_time_zone = None
+        self.config = config
+        self.exchange_info = None
+        self.symbols = []
+        self._x_mbx_used_weight = 0
+        self._x_mbx_used_weight_1m = 0
+        self._timeout = 5
+        self._show_limit_usage = True
+        self._local_time_zone = None
         self._client_error_retry_wait_time_s = 0
         self._client_error_restart_time = 0
 
         # Initialise logger for client manager
-        self.logger = Logger(logger_name=__file__,
-                             log_level=log_level).get_logger()
+        self._logger = Logger(logger_name=__file__,
+                              log_level=log_level).get_logger()
 
         try:
             # Cast config string values to required types
             timeout = int(config['TIMEOUT'])
             show_limit_usage = bool(config['SHOW_LIMIT_USAGE'] == 'TRUE')
+            symbols = json.loads(config["SYMBOLS"])
         except Exception as e:
-            self.logger.warning("invalid optional binance config value(s) in "
-                                "app.cfg, default values will be used, error: "
-                                f"{e}")
+            self._logger.warning("invalid optional binance config value(s) in "
+                                 "app.cfg, default values will be used, "
+                                 f"error: {e}")
         else:
-            self.timeout = timeout
-            self.show_limit_usage = show_limit_usage
-            self.logger.debug("loaded config options for binance client")
+            self._timeout = timeout
+            self._show_limit_usage = show_limit_usage
+            self.symbols = symbols
+            self._logger.debug("loaded config options for binance client")
 
         # Getting local timezone info
-        self.local_time_zone = datetime.now().astimezone().tzinfo
+        self._local_time_zone = datetime.now().astimezone().tzinfo
 
         # Initialise binance API client
         # API key/secret are required for user data endpoints
         try:
             self.client = Client(
-                base_url=config['BASE_URL'],
-                api_key=config['API_KEY'],
-                api_secret=config['SECRET_KEY'],
-                timeout=self.timeout,
-                show_limit_usage=self.show_limit_usage
+                base_url=self.config['BASE_URL'],
+                api_key=self.config['API_KEY'],
+                api_secret=self.config['SECRET_KEY'],
+                timeout=self._timeout,
+                show_limit_usage=self._show_limit_usage
             )
         except Exception as e:
-            self.logger.exception(f"failed to initialise binance client: {e}")
-            self.logger.critical("exiting application due to error")
+            self._logger.critical(f"failed to initialise binance client: {e}")
+            self._logger.critical("exiting application due to error")
             exit()
         else:
-            self.logger.debug("initialised binance client")
+            self._logger.info("connected to binance")
 
-    def get_exchange_info(self, symbols=None, permissions=None):
+    def get_exchange_info(self):
 
         if self._can_make_request():
             try:
                 # Get exchange info for given symbols and permissions, if any
-                result = self.client.exchange_info(symbols, permissions)
-                # Update limit weights
-                if 'limit_usage' in result:
-                    self._update_weights(result['limit_usage'])
-
-                # Save the data
-                data = result['data']
-                self.timezone = data['timezone']
-                self.server_time = data['serverTime']
-                self.rate_limits = data['rateLimits']
-                self.exchange_filters = data['exchangeFilters']
+                result = self.client.exchange_info(symbols=self.symbols)
             except binance.error.ClientError as e:
                 self._handle_client_error(e)
-                return None
             else:
+                self._logger.info("retrieved binance exchange information")
                 # Update limit weights
                 if 'limit_usage' in result:
                     self._update_weights(result['limit_usage'])
                 if 'data' in result:
-                    return result['data']
+                    self.exchange_info = result['data']
         else:
-            self.logger.warning("server request limit reached, need to wait "
+            self._logger.warning("server request limit reached, need to wait "
                                 f"until {self._client_error_restart_time}, "
                                 "skipping action")
-            return None
 
     def get_depth(self, symbol, limit=100):
 
         if self._can_make_request():
-            self.logger.debug("requesting depth from binance")
+            self._logger.debug("requesting depth from binance")
             try:
                 # Get order book for given symbol
                 result = self.client.depth(symbol=symbol, limit=limit)
@@ -146,8 +141,11 @@ class ClientManager():
     def get_klines(self, symbol, interval, start_time, end_time, limit):
 
         if self._can_make_request():
-            self.logger.debug(f"requesting klines for '{symbol} {interval}' "
-                              f"between {start_time} and {end_time}")
+            self._logger.debug(f"requesting klines for '{symbol} {interval}' "
+                               "between "
+                               f"{datetime.fromtimestamp(start_time/1000)} "
+                               f"and {datetime.fromtimestamp(end_time/1000)}")
+            
             try:
                 result = self.client.klines(
                     symbol,
@@ -172,13 +170,13 @@ class ClientManager():
 
     def _update_weights(self, limit_usage):
         try:
-            self.x_mbx_used_weight = limit_usage['x-mbx-used-weight']
-            self.x_mbx_used_weight_1m = limit_usage['x-mbx-used-weight-1m']
+            self._x_mbx_used_weight = limit_usage['x-mbx-used-weight']
+            self._x_mbx_used_weight_1m = limit_usage['x-mbx-used-weight-1m']
         except KeyError:
-            self.logger.warning("missing limit usage data in Binance response")
+            self._logger.warning("missing limit usage data in Binance response")
         else:
-            self.logger.debug(f"client weights:\t{self.x_mbx_used_weight}\t"
-                              f"{self.x_mbx_used_weight_1m}")
+            self._logger.debug(f"client weights:\t{self._x_mbx_used_weight}\t"
+                              f"{self._x_mbx_used_weight_1m}")
 
     def _can_make_request(self):
 
@@ -205,10 +203,10 @@ class ClientManager():
         self._client_error_header = e.header
         self._client_error_error_data = e.error_data
 
-        self.logger.error(f"binance client error: {e.error_message}")
+        self._logger.error(f"binance client error: {e.error_message}")
 
         # Check what error code occurred
-        match self.client_error_code:
+        match self._client_error_code:
             # Disconnected
             case -1001:
                 pass
@@ -258,10 +256,10 @@ class ClientManager():
         match self._client_error_http_status_code:
             # IP banned
             case 418:
-                self.logger.warning("client made too many requests, IP banned "
+                self._logger.warning("client made too many requests, IP banned "
                                     f"until {self._client_error_restart_time}")
             # Too many requests, warning before IP ban
             case 429:
-                self.logger.warning("client made too many requests, waiting "
+                self._logger.warning("client made too many requests, waiting "
                                     f"until {self._client_error_restart_time}"
                                     "s to avoid IP ban")
