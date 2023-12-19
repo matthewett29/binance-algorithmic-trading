@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "binance-algorithmic-trading"
+version = "0.1.0"
+description = "Binance algorithmic crypto trading application"
+authors = ["Matt Hewett <matthewett29@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+apprise = "^1.6.0"
+SQLAlchemy = "^2.0.23"
+binance-connector = "^3.5.1"
+matplotlib = "^3.8.2"
+pandas = "^2.1.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

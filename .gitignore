@@ -1,0 +1,12 @@
+# Project specific config and log files
+*.cfg
+*.log
+__pycache__
+archive
+database.db
+
+# Pyenv files
+.venv
+
+# Macosx formatting file
+.DS_Store
