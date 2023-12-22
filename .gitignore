@@ -4,6 +4,7 @@
 __pycache__
 archive
 database.db
+*proprietary.py
 
 # Pyenv files
 .venv

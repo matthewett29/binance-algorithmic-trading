@@ -11,6 +11,7 @@ SQLAlchemy = "^2.0.23"
 binance-connector = "^3.5.1"
 matplotlib = "^3.8.2"
 pandas = "^2.1.4"
+ipython = "^8.18.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

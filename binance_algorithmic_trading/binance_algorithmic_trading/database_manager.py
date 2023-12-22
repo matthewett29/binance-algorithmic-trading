@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from math import floor
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -95,11 +96,32 @@ class DatabaseManager():
             self._logger.debug("failed to create database tables with error: "
                                f"{e}")
         else:
-            self._logger.debug("created database tables: "
+            self._logger.debug("intialised database tables: "
                                f"{inspect(self._engine).get_table_names()}")
 
+    def get_klines_df(self, symbol, interval, start_time, end_time):
+        '''
+        Return a pandas df with klines data for given symbol between two times.
+        '''
+
+        self._logger.debug(f"retrieving klines for '{symbol} {interval}' "
+                           f"between {start_time} and {end_time}")
+
+        query = (
+            select(Kline)
+            .filter_by(symbol=symbol)
+            .filter_by(interval=interval)
+            .where(Kline.open_time >= start_time)
+            .where(Kline.open_time < end_time)
+            .order_by(Kline.open_time)
+        )
+
+        klines_df = pd.read_sql(query, self._engine)
+
+        return klines_df
+
     def update_klines(self, symbols, intervals, client_manager):
-        """
+        '''
         Update the database with klines data from Binance.
 
         The klines data to be updated consists of each symbol listed in the
@@ -125,7 +147,7 @@ class DatabaseManager():
         Returns
         -------
         None
-        """
+        '''
         symbols = json.loads(symbols)
         intervals = json.loads(intervals)
 
