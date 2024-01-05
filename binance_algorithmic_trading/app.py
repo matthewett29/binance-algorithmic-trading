@@ -5,7 +5,7 @@ from binance_algorithmic_trading.logger import Logger
 from binance_algorithmic_trading.config import get_config
 from binance_algorithmic_trading.database_manager import DatabaseManager
 from binance_algorithmic_trading.client_manager import ClientManager
-from binance_algorithmic_trading.strategies.JITF_proprietary import JumpInTheFlowStrategy
+from binance_algorithmic_trading.strategies.proprietary.JITF import JumpInTheFlowStrategy
 
 def main():
     '''
