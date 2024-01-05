@@ -1,3 +1,3 @@
-[submodule "binance_algorithmic_trading/binance_algorithmic_trading/strategies/proprietary-strategies"]
-	path = binance_algorithmic_trading/binance_algorithmic_trading/strategies/proprietary-strategies
+[submodule "binance_algorithmic_trading/binance_algorithmic_trading/strategies/proprietary"]
+	path = binance_algorithmic_trading/binance_algorithmic_trading/strategies/proprietary
 	url = https://github.com/matthewett29/proprietary-strategies.git
