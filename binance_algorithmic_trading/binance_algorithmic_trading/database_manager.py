@@ -36,7 +36,8 @@ class DatabaseManager():
     _valid_symbols = [
         'BTCUSDT',
         'SHIBUSDT',
-        'ETHUSDT'
+        'ETHUSDT',
+        'ADAUSDT'
     ]
 
     # See https://binance-docs.github.io/apidocs/delivery/en/
@@ -340,6 +341,16 @@ class DatabaseManager():
             # take floor of start and end times to ensure when converted from ms to s there is no decimal values
             start_time_ms_since_utc = floor(start_time_ms_since_utc)
             end_time_ms_since_utc = floor(end_time_ms_since_utc)
+
+            # Ensure start time is greater than 0, otherwise we are trying to
+            # get data before 1970 which causes an error from the client
+            if start_time_ms_since_utc < 0:
+                start_time_ms_since_utc = 0
+
+            # If end time is less than zero, then we are trying to get data
+            # before 1970 which is not necessary (doesn't exist for binance)
+            if end_time_ms_since_utc < 0:
+                break
 
             self._logger.debug(f"getting klines for '{symbol} {interval}' between {datetime.fromtimestamp(start_time_ms_since_utc/1000)} and {datetime.fromtimestamp(end_time_ms_since_utc/1000)}")
 
