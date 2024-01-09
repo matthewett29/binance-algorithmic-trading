@@ -195,8 +195,6 @@ class BaseStrategy(ABC):
 
         self._logger.info("finished backtesting")
 
-        self._trade_log.to_html('data/trade_log.html')
-
         # Calculate stats for the strategy
         self._calculate_stats()
 
@@ -213,9 +211,7 @@ class BaseStrategy(ABC):
         print("SETTINGS")
         print(f"\tStarting Balance $:\t\t      {self.starting_capital}")
         print(f"\tCapital Risked Per Trade %:\t\t  {self.risk_percentage}")
-        print(f"\t15m Entry Trigger Period, N:\t\t {self.N}")
-        print(f"\tStop Loss Size, X:\t\t\t{self.X}")
-        print(f"\tVolume Factor, Y:\t\t\t{self.Y}")
+        print(f"\tParams: {self.params}")
         print(f"\tStart Time:\t\t{self.backtest_start_time.strftime('%Y-%m-%d %H:%M:00')}")
         print(f"\tEnd Time:\t\t{self.backtest_end_time.strftime('%Y-%m-%d %H:%M:00')}")
         print("---------------------------------------------------")
@@ -263,6 +259,9 @@ class BaseStrategy(ABC):
         # last_EOTB_trade_block_id = EOTB_trades['trade_block_id'].max()
         # last_EOTB_trade_block_trades = EOTB_trades.query('trade_block_id == @last_EOTB_trade_block_id')
         # print(last_EOTB_trade_block_trades)
+
+    def get_trade_log(self):
+        return self._trade_log
 
     @abstractmethod
     def _execute_strategy(self):
