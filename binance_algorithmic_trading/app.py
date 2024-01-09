@@ -19,21 +19,26 @@ def main():
     # Get config options
     config = get_config()
 
-    # # Initialise binance API client manager and connect
-    # # using the API key/secret from app.cfg
-    # client_manager = ClientManager(
-    #     log_level=logging.DEBUG,
-    #     config=config['binance']
-    # )
+    # Initialise binance API client manager and connect
+    # using the API key/secret from app.cfg
+    client_manager = ClientManager(
+        log_level=logging.DEBUG,
+        config=config['binance']
+    )
 
-    # # Get binance exchange info
-    # client_manager.get_exchange_info()
+    # Get binance exchange info
+    client_manager.get_exchange_info()
 
     # Initialise database
     database_manager = DatabaseManager(
         log_level=logging.DEBUG,
         config=config['database']
     )
+
+
+    # Configure start and end time for backtesting
+    end_time = datetime.strptime("2024-01-08 09:35:00", "%Y-%m-%d %H:%M:%S")
+    start_time = end_time - timedelta(days=365)
 
     # # Update database with all new data from binance
     # # for the symbols and intervals enabled in the config file
@@ -44,30 +49,33 @@ def main():
     # )
 
     # Initialise Jump In The Flow Strategy
-    strategy = JumpInTheFlowStrategy(log_level=logging.DEBUG)
+    strategy = JumpInTheFlowStrategy(
+        log_level=logging.DEBUG,
+        database_manager=database_manager)
 
-    end_time = datetime.strptime("2024-01-08 09:35:00", "%Y-%m-%d %H:%M:%S")
-    # end_time= datetime.now()
+    # Configure strategy custom params
+    N = 10
+    X = 4
+    Y = 0.55
+    params = f"{N}:{X}:{Y}"
 
     # Backtest the strategy on all symols in app.cfg
     strategy.backtest(
         starting_capital=10000,
         risk_percentage=1,
         symbols=config['binance']['SYMBOLS'],
-        start_time=end_time-timedelta(days=1825),
+        start_time=start_time,
         end_time=end_time,
         entry_interval='12h',
         trade_interval='30m',
-        N=10,
-        X=0.2,
-        Y=0.55,
-        use_BNB_for_commission=True,
-        database_manager=database_manager
+        params=params,
+        use_BNB_for_commission=True
     )
 
-    # Get the strategy backtest stats
+    # Get the strategy backtest stats, save to file and print
     stats = strategy.get_stats()
     stats.to_html('data/backtest_stats.html')
+    strategy.print_stats()
 
 
 if __name__ == "__main__":
