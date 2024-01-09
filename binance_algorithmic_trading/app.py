@@ -5,7 +5,7 @@ from binance_algorithmic_trading.logger import Logger
 from binance_algorithmic_trading.config import get_config
 from binance_algorithmic_trading.database_manager import DatabaseManager
 from binance_algorithmic_trading.client_manager import ClientManager
-from binance_algorithmic_trading.strategies.proprietary.JITF import JumpInTheFlowStrategy
+from binance_algorithmic_trading.strategies.EMAX_strategy import EMAXStrategy
 
 def main():
     '''
@@ -35,34 +35,32 @@ def main():
         config=config['database']
     )
 
+    # Update database with all new data from binance
+    # for the symbols and intervals enabled in the config file
+    database_manager.update_klines(
+        symbols=config['binance']['SYMBOLS'],
+        intervals=config['binance']['INTERVALS'],
+        client_manager=client_manager
+    )
 
     # Configure start and end time for backtesting
-    end_time = datetime.strptime("2024-01-08 09:35:00", "%Y-%m-%d %H:%M:%S")
-    start_time = end_time - timedelta(days=365)
+    end_time = datetime.now()
+    start_time = end_time - timedelta(days=3650)
 
-    # # Update database with all new data from binance
-    # # for the symbols and intervals enabled in the config file
-    # database_manager.update_klines(
-    #     symbols=config['binance']['SYMBOLS'],
-    #     intervals=config['binance']['INTERVALS'],
-    #     client_manager=client_manager
-    # )
-
-    # Initialise Jump In The Flow Strategy
-    strategy = JumpInTheFlowStrategy(
+    # Initialise EMA Crossover Strategy
+    strategy = EMAXStrategy(
         log_level=logging.DEBUG,
         database_manager=database_manager)
 
     # Configure strategy custom params
-    N = 10
-    X = 4
-    Y = 0.55
-    params = f"{N}:{X}:{Y}"
+    EMA_fast = 20
+    EMA_slow = 50
+    params = f"{EMA_fast}:{EMA_slow}"
 
-    # Backtest the strategy on all symols in app.cfg
+    # Backtest the strategy on all symbols in app.cfg
     strategy.backtest(
         starting_capital=10000,
-        risk_percentage=1,
+        risk_percentage=None,
         symbols=config['binance']['SYMBOLS'],
         start_time=start_time,
         end_time=end_time,
@@ -72,9 +70,13 @@ def main():
         use_BNB_for_commission=True
     )
 
-    # Get the strategy backtest stats, save to file and print
+    # Get the strategy backtest stats and trade log
     stats = strategy.get_stats()
     stats.to_html('data/backtest_stats.html')
+
+    trade_log = strategy.get_trade_log()
+    trade_log.to_html('data/backtest_trades.html')
+
     strategy.print_stats()
 
 
