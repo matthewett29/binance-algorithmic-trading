@@ -1,11 +1,13 @@
 #!python3
 import logging
+from pprint import pprint
 from datetime import datetime, timedelta
 from binance_algorithmic_trading.logger import Logger
 from binance_algorithmic_trading.config import get_config
 from binance_algorithmic_trading.database_manager import DatabaseManager
 from binance_algorithmic_trading.client_manager import ClientManager
 from binance_algorithmic_trading.strategies.EMAX_strategy import EMAXStrategy
+
 
 def main():
     '''
@@ -58,9 +60,9 @@ def main():
     params = f"{EMA_fast}:{EMA_slow}"
 
     # Backtest the strategy on all symbols in app.cfg
-    strategy.backtest(
+    results = strategy.backtest(
         starting_capital=10000,
-        risk_percentage=None,
+        risk_percentage=100,
         symbols=config['binance']['SYMBOLS'],
         start_time=start_time,
         end_time=end_time,
@@ -70,14 +72,14 @@ def main():
         use_BNB_for_commission=True
     )
 
-    # Get the strategy backtest stats and trade log
-    stats = strategy.get_stats()
-    stats.to_html('data/backtest_stats.html')
+    # Save the backtest results
+    database_manager.save_backtest(results)
 
+    # Save the backtest trade log to file for review
     trade_log = strategy.get_trade_log()
     trade_log.to_html('data/backtest_trades.html')
 
-    strategy.print_stats()
+    pprint(results, sort_dicts=False)
 
 
 if __name__ == "__main__":

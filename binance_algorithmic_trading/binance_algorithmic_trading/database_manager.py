@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select, inspect
 from models.base import Base
 from models.klines import Kline
+from models.backtests import Backtest
 from binance_algorithmic_trading.logger import Logger
 
 
@@ -99,6 +100,19 @@ class DatabaseManager():
         else:
             self._logger.debug("intialised database tables: "
                                f"{inspect(self._engine).get_table_names()}")
+
+    def save_backtest(self, results):
+        '''
+        Save results from a backtest into the backtests database table.
+        '''
+        self._logger.debug("saving backtest results for "
+                           f"'{results['strategy_name']}' Strategy on"
+                           f"'{results['symbol']}'")
+
+        with Session(self._engine) as session:
+            new_backtest_entry = Backtest(**results)
+            session.add(new_backtest_entry)
+            session.commit()
 
     def get_klines_df(self, symbol, interval, start_time, end_time):
         '''
