@@ -17,7 +17,7 @@ class EMAXStrategy(BaseStrategy):
         self._logger = Logger(logger_name=__file__,
                               log_level=log_level).get_logger()
         super().__init__(log_level, database_manager)
-        self.name = "EMAX"
+        self.strategy_name = "EMAX"
 
     def _execute_strategy(self):
 

@@ -21,7 +21,7 @@ class BaseStrategy(ABC):
         
         self._database_manager = database_manager
 
-        self.name = None
+        self.strategy_name = None
 
         # Attributes initialised from params in the backtest function
         self.symbol = None
@@ -48,50 +48,15 @@ class BaseStrategy(ABC):
         self.total_breakevens = 0
         self.max_win_streak = 0
         self.max_loss_streak = 0
-        self.total_SL_exits_ALL = 0
-        self.total_TSL_exits_ALL = 0
-        self.total_EOTB_exits_ALL = 0
-        self.avg_win_profit_perc_ALL = 0
-        self.avg_loss_profit_perc_ALL = 0
-        self.max_win_profit_perc_ALL = 0
-        self.max_loss_profit_perc_ALL = 0
-        self.min_win_profit_perc_ALL = 0
-        self.min_loss_profit_perc_ALL = 0
-
-        # Initialise backtest statistics dataframe
-        self._backtest_stats = DataFrame(
-            columns=[
-                'strategy_name',
-                'symbol',
-                'start_time',
-                'end_time',
-                'entry_interval',
-                'trade_interval',
-                'params',
-                'risk_percentage',
-                'starting_capital',
-                'remaining_capital',
-                'gross_profit',
-                'fees',
-                'net_profit',
-                'profit_factor',
-                'max_drawdown',
-                'total_trades',
-                'total_wins',
-                'total_losses',
-                'max_win_streak',
-                'max_loss_streak',
-                'SL_exits',
-                'TSL_exits',
-                'EOTB_exits',
-                'avg_win_return',
-                'avg_loss_return',
-                'max_win_return',
-                'max_loss_return',
-                'min_win_return',
-                'min_loss_return'
-            ]
-        )
+        self.total_SL_exits = 0
+        self.total_TSL_exits = 0
+        self.total_EOT_exits = 0
+        self.avg_win_profit_perc = 0
+        self.avg_loss_profit_perc = 0
+        self.max_win_profit_perc = 0
+        self.max_loss_profit_perc = 0
+        self.min_win_profit_perc = 0
+        self.min_loss_profit_perc = 0
 
     def backtest(self, starting_capital, risk_percentage, symbols, start_time,
                  end_time, entry_interval, trade_interval, params,
@@ -149,8 +114,8 @@ class BaseStrategy(ABC):
         often within the movement of a 1m candle.
         '''
 
-        self._logger.info(f"starting backtest using {self.name} strategy "
-                          f"between {start_time} and {end_time}")
+        self._logger.info(f"starting backtest using {self.strategy_name} "
+                          f"strategy between {start_time} and {end_time}")
 
         symbols = json.loads(symbols)
         self.backtest_start_time = start_time
@@ -195,70 +160,12 @@ class BaseStrategy(ABC):
 
         self._logger.info("finished backtesting")
 
-        # Calculate stats for the strategy
+        # Calculate and return stats for the strategy
         self._calculate_stats()
+        return self.get_stats()
 
     def get_stats(self):
         return self._backtest_stats
-
-    def print_stats(self):
-        '''
-        Print all performance metrics
-        '''
-        print("---------------------------------------------------")
-        print(f"****** {self.name} Strategy Performance ******")
-        print("---------------------------------------------------")
-        print("SETTINGS")
-        print(f"\tStarting Balance $:\t\t      {self.starting_capital}")
-        print(f"\tCapital Risked Per Trade %:\t\t  {self.risk_percentage}")
-        print(f"\tParams: {self.params}")
-        print(f"\tStart Time:\t\t{self.backtest_start_time.strftime('%Y-%m-%d %H:%M:00')}")
-        print(f"\tEnd Time:\t\t{self.backtest_end_time.strftime('%Y-%m-%d %H:%M:00')}")
-        print("---------------------------------------------------")
-        print("TOTALS \t\t\tALL\tLONG\tSHORT")
-        print(f"\tTrades:\t\t{self.total_trades_ALL}\t{self.total_trades_LONG}\t{self.total_trades_SHORT}")
-        print(f"\tWins:\t\t{self.total_wins_ALL}\t{self.total_wins_LONG}\t{self.total_wins_SHORT}")
-        print(f"\tLosses:\t\t{self.total_losses_ALL}\t{self.total_losses_LONG}\t{self.total_losses_SHORT}")
-        print(f"\tBreakeven:\t{self.total_breakevens_ALL}\t{self.total_breakevens_LONG}\t{self.total_breakevens_SHORT}")
-        print("")
-        print(f"\tSL Exits:\t{self.total_SL_exits_ALL}\t{self.total_SL_exits_LONG}\t{self.total_SL_exits_SHORT}")
-        print(f"\tTSL Exits:\t{self.total_TSL_exits_ALL}\t{self.total_TSL_exits_LONG}\t{self.total_TSL_exits_SHORT}")
-        print(f"\tTSL Win Exits:\t{self.total_TSL_win_exits_ALL}\t{self.total_TSL_win_exits_LONG}\t{self.total_TSL_win_exits_SHORT}")
-        print(f"\tTSL Loss Exits:\t{self.total_TSL_loss_exits_ALL}\t{self.total_TSL_loss_exits_LONG}\t{self.total_TSL_loss_exits_SHORT}")
-        print(f"\tEOTB Exits:\t{self.total_EOTB_exits_ALL}\t{self.total_EOTB_exits_LONG}\t{self.total_EOTB_exits_SHORT}")
-        print("RATES")
-        print(f"\tWin Rate:\t{self.win_rate_ALL}\t{self.win_rate_LONG}\t{self.win_rate_SHORT}")
-        print(f"\tLoss Rate:\t{self.loss_rate_ALL}\t{self.loss_rate_LONG}\t{self.loss_rate_SHORT}")
-        print(f"\tBreakeven Rate:\t{self.breakeven_rate_ALL}\t{self.breakeven_rate_LONG}\t{self.breakeven_rate_SHORT}")
-        print("WINS")
-        print(f"\tMax Profit %:\t{self.max_win_profit_perc_ALL}\t{self.max_win_profit_perc_LONG}\t{self.max_win_profit_perc_SHORT}")
-        print(f"\tMin Profit %:\t{self.min_win_profit_perc_ALL}\t{self.min_win_profit_perc_LONG}\t{self.min_win_profit_perc_SHORT}")
-        print(f"\tAvg Profit %:\t{self.avg_win_profit_perc_ALL}\t{self.avg_win_profit_perc_LONG}\t{self.avg_win_profit_perc_SHORT}")
-        # print("")
-        # print(f"\tMax Profit $:\t{self.max_win_profit_ALL}\t{self.max_win_profit_LONG}\t{self.max_win_profit_SHORT}")
-        # print(f"\tMin Profit $:\t{self.min_win_profit_ALL}\t{self.min_win_profit_LONG}\t{self.min_win_profit_SHORT}")
-        # print(f"\tAvg Profit $:\t{self.avg_win_profit_ALL}\t{self.avg_win_profit_LONG}\t{self.avg_win_profit_SHORT}")
-        print("LOSSES")
-        print(f"\tMax Loss %:\t{self.max_loss_profit_perc_ALL}\t{self.max_loss_profit_perc_LONG}\t{self.max_loss_profit_perc_SHORT}")
-        print(f"\tMin Loss %:\t{self.min_loss_profit_perc_ALL}\t{self.min_loss_profit_perc_LONG}\t{self.min_loss_profit_perc_SHORT}")
-        print(f"\tAvg Loss %:\t{self.avg_loss_profit_perc_ALL}\t{self.avg_loss_profit_perc_LONG}\t{self.avg_loss_profit_perc_SHORT}")
-        # print("")
-        # print(f"\tMax Loss $:\t{self.max_loss_profit_ALL}\t{self.max_loss_profit_LONG}\t{self.max_loss_profit_SHORT}")
-        # print(f"\tMin Loss $:\t{self.min_loss_profit_ALL}\t{self.min_loss_profit_LONG}\t{self.min_loss_profit_SHORT}")
-        # print(f"\tAvg Loss $:\t{self.avg_loss_profit_ALL}\t{self.avg_loss_profit_LONG}\t{self.avg_loss_profit_SHORT}")
-        print("PERFORMANCE")
-        print(f"\tProfit Factor:\t\t{self.profit_factor}")
-        print(f"\tMax Drawdown %:\t\t{self.max_drawdown}")
-        print(f"\tGross Profit $:\t\t{round(self.total_gross_profit, 2)}")
-        print(f"\tNet Profit $:\t\t{round(self.total_net_profit, 2)}")
-        print(f"\tCommission $:\t\t{round(self.total_fees, 2)}")
-        print(f"\tEnding Balance $:\t{round(self.current_capital, 2)}")
-        print("---------------------------------------------------")
-
-        # EOTB_trades = self._trade_log.query('exit_trigger == "END_OF_TRADING_BLOCK"')
-        # last_EOTB_trade_block_id = EOTB_trades['trade_block_id'].max()
-        # last_EOTB_trade_block_trades = EOTB_trades.query('trade_block_id == @last_EOTB_trade_block_id')
-        # print(last_EOTB_trade_block_trades)
 
     def get_trade_log(self):
         return self._trade_log
@@ -318,239 +225,249 @@ class BaseStrategy(ABC):
 
     def _calculate_stats(self):
 
-        self.win_rate_SHORT = None
-        self.loss_rate_SHORT = None
-        self.breakeven_rate_SHORT = None
-        self.win_rate_LONG = None
-        self.loss_rate_LONG = None
-        self.breakeven_rate_LONG = None
-        self.win_rate_ALL = None
-        self.loss_rate_ALL = None
-        self.breakeven_rate_ALL = None
-        self.max_win_profit_ALL = None
-        self.max_win_profit_perc_ALL = None
-        self.max_win_profit_LONG = None
-        self.max_win_profit_perc_LONG = None
-        self.max_win_profit_SHORT = None
-        self.max_win_profit_perc_SHORT = None
-        self.min_win_profit_ALL = None
-        self.min_win_profit_perc_ALL = None
-        self.min_win_profit_LONG = None
-        self.min_win_profit_perc_LONG = None
-        self.min_win_profit_SHORT = None
-        self.min_win_profit_perc_SHORT = None
-        self.avg_win_profit_ALL = None
-        self.avg_win_profit_perc_ALL = None
-        self.avg_win_profit_LONG = None
-        self.avg_win_profit_perc_LONG = None
-        self.avg_win_profit_SHORT = None
-        self.avg_win_profit_perc_SHORT = None
-        self.max_loss_profit_ALL = None
-        self.max_loss_profit_perc_ALL = None
-        self.max_loss_profit_LONG = None
-        self.max_loss_profit_perc_LONG = None
-        self.max_loss_profit_SHORT = None
-        self.max_loss_profit_perc_SHORT = None
-        self.min_loss_profit_ALL = None
-        self.min_loss_profit_perc_ALL = None
-        self.min_loss_profit_LONG = None
-        self.min_loss_profit_perc_LONG = None
-        self.min_loss_profit_SHORT = None
-        self.min_loss_profit_perc_SHORT = None
-        self.avg_loss_profit_ALL = None
-        self.avg_loss_profit_perc_ALL = None
-        self.avg_loss_profit_LONG = None
-        self.avg_loss_profit_perc_LONG = None
-        self.avg_loss_profit_SHORT = None
-        self.avg_loss_profit_perc_SHORT = None
-        self.total_SL_exits_ALL = None
-        self.total_SL_exits_LONG = None
-        self.total_SL_exits_SHORT = None
-        self.total_TSL_exits_ALL = None
-        self.total_TSL_exits_LONG = None
-        self.total_TSL_exits_SHORT = None
-        self.total_TSL_win_exits_ALL = None
-        self.total_TSL_win_exits_LONG = None
-        self.total_TSL_win_exits_SHORT = None
-        self.total_TSL_loss_exits_ALL = None
-        self.total_TSL_loss_exits_LONG = None
-        self.total_TSL_loss_exits_SHORT = None
-        self.total_EOTB_exits_ALL = None
-        self.total_EOTB_exits_LONG = None
-        self.total_EOTB_exits_SHORT = None
+        self.win_rate_short = None
+        self.loss_rate_short = None
+        self.breakeven_rate_short = None
+        self.win_rate_long = None
+        self.loss_rate_long = None
+        self.breakeven_rate_long = None
+        self.win_rate = None
+        self.loss_rate = None
+        self.breakeven_rate = None
+        self.max_win_profit = None
+        self.max_win_profit_perc = None
+        self.max_win_profit_long = None
+        self.max_win_profit_perc_long = None
+        self.max_win_profit_short = None
+        self.max_win_profit_perc_short = None
+        self.min_win_profit = None
+        self.min_win_profit_perc = None
+        self.min_win_profit_long = None
+        self.min_win_profit_perc_long = None
+        self.min_win_profit_short = None
+        self.min_win_profit_perc_short = None
+        self.avg_win_profit = None
+        self.avg_win_profit_perc = None
+        self.avg_win_profit_long = None
+        self.avg_win_profit_perc_long = None
+        self.avg_win_profit_short = None
+        self.avg_win_profit_perc_short = None
+        self.max_loss_profit = None
+        self.max_loss_profit_perc = None
+        self.max_loss_profit_long = None
+        self.max_loss_profit_perc_long = None
+        self.max_loss_profit_short = None
+        self.max_loss_profit_perc_short = None
+        self.min_loss_profit = None
+        self.min_loss_profit_perc = None
+        self.min_loss_profit_long = None
+        self.min_loss_profit_perc_long = None
+        self.min_loss_profit_short = None
+        self.min_loss_profit_perc_short = None
+        self.avg_loss_profit = None
+        self.avg_loss_profit_perc = None
+        self.avg_loss_profit_long = None
+        self.avg_loss_profit_perc_long = None
+        self.avg_loss_profit_short = None
+        self.avg_loss_profit_perc_short = None
+        self.total_SL_exits = None
+        self.total_SL_exits_long = None
+        self.total_SL_exits_short = None
+        self.total_TSL_exits = None
+        self.total_TSL_exits_long = None
+        self.total_TSL_exits_short = None
+        self.total_TSL_win_exits = None
+        self.total_TSL_win_exits_long = None
+        self.total_TSL_win_exits_short = None
+        self.total_TSL_loss_exits = None
+        self.total_TSL_loss_exits_long = None
+        self.total_TSL_loss_exits_short = None
+        self.total_EOT_exits = None
+        self.total_EOT_exits_long = None
+        self.total_EOT_exits_short = None
 
-        self.max_SL_hits_in_trading_block_ALL = None
-        self.max_SL_hits_in_trading_block_LONG = None
-        self.max_SL_hits_in_trading_block_SHORT = None
-        self.min_SL_hits_in_trading_block_ALL = None
-        self.min_SL_hits_in_trading_block_LONG = None
-        self.min_SL_hits_in_trading_block_SHORT = None
-        self.avg_SL_hits_in_trading_block_ALL = None
-        self.avg_SL_hits_in_trading_block_LONG = None
-        self.avg_SL_hits_in_trading_block_SHORT = None
+        self.max_SL_hits_in_trading_block = None
+        self.max_SL_hits_in_trading_block_long = None
+        self.max_SL_hits_in_trading_block_short = None
+        self.min_SL_hits_in_trading_block = None
+        self.min_SL_hits_in_trading_block_long = None
+        self.min_SL_hits_in_trading_block_short = None
+        self.avg_SL_hits_in_trading_block = None
+        self.avg_SL_hits_in_trading_block_long = None
+        self.avg_SL_hits_in_trading_block_short = None
 
-        results_ALL = self._trade_log
-        results_LONG = results_ALL.query('direction_long == 1')
-        results_SHORT = results_ALL.query('direction_long == 0')
+        results = self._trade_log
+        results_long = results.query('direction_long == 1')
+        results_short = results.query('direction_long == 0')
 
         # Get dataframes for wins, losses and breakevens
-        wins_ALL = results_ALL.query('net_profit > 0')
-        wins_LONG = wins_ALL.query('direction_long == 1')
-        wins_SHORT = wins_ALL.query('direction_long == 0') 
-        losses_ALL = results_ALL.query('net_profit < 0')
-        losses_LONG = losses_ALL.query('direction_long == 1')
-        losses_SHORT = losses_ALL.query('direction_long == 0') 
-        breakevens_ALL = results_ALL.query('net_profit == 0')
-        breakevens_LONG = breakevens_ALL.query('direction_long == 1')
-        breakevens_SHORT = breakevens_ALL.query('direction_long == 0') 
+        wins = results.query('net_profit > 0')
+        wins_long = wins.query('direction_long == 1')
+        wins_short = wins.query('direction_long == 0') 
+        losses = results.query('net_profit < 0')
+        losses_long = losses.query('direction_long == 1')
+        losses_short = losses.query('direction_long == 0') 
+        breakevens = results.query('net_profit == 0')
+        breakevens_long = breakevens.query('direction_long == 1')
+        breakevens_short = breakevens.query('direction_long == 0') 
 
         # Calculate total trades
-        self.total_trades_ALL = len(results_ALL.index)
-        self.total_trades_LONG = len(results_LONG.index)
-        self.total_trades_SHORT = len(results_SHORT.index)
+        self.total_trades = len(results.index)
+        self.total_trades_long = len(results_long.index)
+        self.total_trades_short = len(results_short.index)
 
         # Calculate total wins and losses
-        self.total_wins_ALL = len(wins_ALL.index)
-        self.total_wins_LONG = len(wins_LONG.index)
-        self.total_wins_SHORT = len(wins_SHORT.index)
-        self.total_losses_ALL = len(losses_ALL.index)
-        self.total_losses_LONG = len(losses_LONG.index)
-        self.total_losses_SHORT = len(losses_SHORT.index)
-        self.total_breakevens_ALL = len(breakevens_ALL.index)
-        self.total_breakevens_LONG = len(breakevens_LONG.index)
-        self.total_breakevens_SHORT = len(breakevens_SHORT.index)
+        self.total_wins = len(wins.index)
+        self.total_wins_long = len(wins_long.index)
+        self.total_wins_short = len(wins_short.index)
+        self.total_losses = len(losses.index)
+        self.total_losses_long = len(losses_long.index)
+        self.total_losses_short = len(losses_short.index)
+        self.total_breakevens = len(breakevens.index)
+        self.total_breakevens_long = len(breakevens_long.index)
+        self.total_breakevens_short = len(breakevens_short.index)
 
         # Calculate win, loss and breakeven rates
-        if self.total_trades_ALL > 0:
-            self.win_rate_ALL = round(
-                self.total_wins_ALL / self.total_trades_ALL, 3)
-            self.loss_rate_ALL = round(
-                self.total_losses_ALL / self.total_trades_ALL, 3)
-            self.breakeven_rate_ALL = round(
-                self.total_breakevens_ALL / self.total_trades_ALL, 3)
+        if self.total_trades > 0:
+            self.win_rate = round(
+                self.total_wins / self.total_trades, 3)
+            self.loss_rate = round(
+                self.total_losses / self.total_trades, 3)
+            self.breakeven_rate = round(
+                self.total_breakevens / self.total_trades, 3)
             
-        if self.total_trades_LONG > 0:
-            self.win_rate_LONG = round(
-                self.total_wins_LONG / self.total_trades_LONG, 3)
-            self.loss_rate_LONG = round(
-                self.total_losses_LONG / self.total_trades_LONG, 3)
-            self.breakeven_rate_LONG = round(
-                self.total_breakevens_LONG / self.total_trades_LONG, 3)
+        if self.total_trades_long > 0:
+            self.win_rate_long = round(
+                self.total_wins_long / self.total_trades_long, 3)
+            self.loss_rate_long = round(
+                self.total_losses_long / self.total_trades_long, 3)
+            self.breakeven_rate_long = round(
+                self.total_breakevens_long / self.total_trades_long, 3)
 
-        if self.total_trades_SHORT > 0:
-            self.win_rate_SHORT = round(
-                self.total_wins_SHORT / self.total_trades_SHORT, 3)
-            self.loss_rate_SHORT = round(
-                self.total_losses_SHORT / self.total_trades_SHORT, 3)
-            self.breakeven_rate_SHORT = round(
-                self.total_breakevens_SHORT / self.total_trades_SHORT, 3)
+        if self.total_trades_short > 0:
+            self.win_rate_short = round(
+                self.total_wins_short / self.total_trades_short, 3)
+            self.loss_rate_short = round(
+                self.total_losses_short / self.total_trades_short, 3)
+            self.breakeven_rate_short = round(
+                self.total_breakevens_short / self.total_trades_short, 3)
 
         # Calculate max, min and avg profit values and percentages for wins
-        self.max_win_profit_ALL, self.max_win_profit_perc_ALL = (
-            self._get_max_profit(wins_ALL))
-        self.max_win_profit_LONG, self.max_win_profit_perc_LONG = (
-            self._get_max_profit(wins_LONG))
-        self.max_win_profit_SHORT, self.max_win_profit_perc_SHORT = (
-            self._get_max_profit(wins_SHORT))
+        self.max_win_profit, self.max_win_profit_perc = (
+            self._get_max_profit(wins))
+        self.max_win_profit_long, self.max_win_profit_perc_long = (
+            self._get_max_profit(wins_long))
+        self.max_win_profit_short, self.max_win_profit_perc_short = (
+            self._get_max_profit(wins_short))
         
-        self.min_win_profit_ALL, self.min_win_profit_perc_ALL = (
-            self._get_min_profit(wins_ALL))
-        self.min_win_profit_LONG, self.min_win_profit_perc_LONG = (
-            self._get_min_profit(wins_LONG))
-        self.min_win_profit_SHORT, self.min_win_profit_perc_SHORT = (
-            self._get_min_profit(wins_SHORT))
+        self.min_win_profit, self.min_win_profit_perc = (
+            self._get_min_profit(wins))
+        self.min_win_profit_long, self.min_win_profit_perc_long = (
+            self._get_min_profit(wins_long))
+        self.min_win_profit_short, self.min_win_profit_perc_short = (
+            self._get_min_profit(wins_short))
         
-        self.avg_win_profit_ALL, self.avg_win_profit_perc_ALL = (
-            self._get_avg_profit(wins_ALL))
-        self.avg_win_profit_LONG, self.avg_win_profit_perc_LONG = (
-            self._get_avg_profit(wins_LONG))
-        self.avg_win_profit_SHORT, self.avg_win_profit_perc_SHORT = (
-            self._get_avg_profit(wins_SHORT))
+        self.avg_win_profit, self.avg_win_profit_perc = (
+            self._get_avg_profit(wins))
+        self.avg_win_profit_long, self.avg_win_profit_perc_long = (
+            self._get_avg_profit(wins_long))
+        self.avg_win_profit_short, self.avg_win_profit_perc_short = (
+            self._get_avg_profit(wins_short))
         
         # Calculate max, min and avg profit values and percentages for losses
-        self.max_loss_profit_ALL, self.max_loss_profit_perc_ALL = (
-            self._get_min_profit(losses_ALL))
-        self.max_loss_profit_LONG, self.max_loss_profit_perc_LONG = (
-            self._get_min_profit(losses_LONG))
-        self.max_loss_profit_SHORT, self.max_loss_profit_perc_SHORT = (
-            self._get_min_profit(losses_SHORT))
+        self.max_loss_profit, self.max_loss_profit_perc = (
+            self._get_min_profit(losses))
+        self.max_loss_profit_long, self.max_loss_profit_perc_long = (
+            self._get_min_profit(losses_long))
+        self.max_loss_profit_short, self.max_loss_profit_perc_short = (
+            self._get_min_profit(losses_short))
         
-        self.min_loss_profit_ALL, self.min_loss_profit_perc_ALL = (
-            self._get_max_profit(losses_ALL))
-        self.min_loss_profit_LONG, self.min_loss_profit_perc_LONG = (
-            self._get_max_profit(losses_LONG))
-        self.min_loss_profit_SHORT, self.min_loss_profit_perc_SHORT = (
-            self._get_max_profit(losses_SHORT))
+        self.min_loss_profit, self.min_loss_profit_perc = (
+            self._get_max_profit(losses))
+        self.min_loss_profit_long, self.min_loss_profit_perc_long = (
+            self._get_max_profit(losses_long))
+        self.min_loss_profit_short, self.min_loss_profit_perc_short = (
+            self._get_max_profit(losses_short))
         
-        self.avg_loss_profit_ALL, self.avg_loss_profit_perc_ALL = (
-            self._get_avg_profit(losses_ALL))
-        self.avg_loss_profit_LONG, self.avg_loss_profit_perc_LONG = (
-            self._get_avg_profit(losses_LONG))
-        self.avg_loss_profit_SHORT, self.avg_loss_profit_perc_SHORT = (
-            self._get_avg_profit(losses_SHORT))
+        self.avg_loss_profit, self.avg_loss_profit_perc = (
+            self._get_avg_profit(losses))
+        self.avg_loss_profit_long, self.avg_loss_profit_perc_long = (
+            self._get_avg_profit(losses_long))
+        self.avg_loss_profit_short, self.avg_loss_profit_perc_short = (
+            self._get_avg_profit(losses_short))
 
         # Calculate max, min and average SL hits in trading block
-        SL_exits_ALL = results_ALL.query('exit_trigger == "STOP_LOSS"')
-        SL_exits_LONG = SL_exits_ALL.query('direction_long == 1')
-        SL_exits_SHORT = SL_exits_ALL.query('direction_long != 1')
-        TSL_exits_ALL = results_ALL.query(
+        SL_exits = results.query('exit_trigger == "STOP_LOSS"')
+        SL_exits_long = SL_exits.query('direction_long == 1')
+        SL_exits_short = SL_exits.query('direction_long != 1')
+        TSL_exits = results.query(
             'exit_trigger == "TRAILING_STOP_LOSS"')
-        TSL_exits_LONG = TSL_exits_ALL.query('direction_long == 1')
-        TSL_exits_SHORT = TSL_exits_ALL.query('direction_long != 1')
-        TSL_win_exits_ALL = TSL_exits_ALL.query('net_profit >= 0')
-        TSL_win_exits_LONG = TSL_win_exits_ALL.query('direction_long == 1')
-        TSL_win_exits_SHORT = TSL_win_exits_ALL.query('direction_long != 1')
-        TSL_loss_exits_ALL = TSL_exits_ALL.query('net_profit < 0')
-        TSL_loss_exits_LONG = TSL_loss_exits_ALL.query('direction_long == 1')
-        TSL_loss_exits_SHORT = TSL_loss_exits_ALL.query('direction_long != 1')
-        EOTB_exits_ALL = results_ALL.query(
+        TSL_exits_long = TSL_exits.query('direction_long == 1')
+        TSL_exits_short = TSL_exits.query('direction_long != 1')
+        TSL_win_exits = TSL_exits.query('net_profit >= 0')
+        TSL_win_exits_long = TSL_win_exits.query('direction_long == 1')
+        TSL_win_exits_short = TSL_win_exits.query('direction_long != 1')
+        TSL_loss_exits = TSL_exits.query('net_profit < 0')
+        TSL_loss_exits_long = TSL_loss_exits.query('direction_long == 1')
+        TSL_loss_exits_short = TSL_loss_exits.query('direction_long != 1')
+        TP_exits = results.query(
+            'exit_trigger == "TAKE_PROFIT"')
+        TP_exits_long = TP_exits.query('direction_long == 1')
+        TP_exits_short = TP_exits.query('direction_long != 1')
+        EOTB_exits = results.query(
             'exit_trigger == "END_OF_TRADING_BLOCK"')
-        EOTB_exits_LONG = EOTB_exits_ALL.query('direction_long == 1')
-        EOTB_exits_SHORT = EOTB_exits_ALL.query('direction_long != 1')
+        EOTB_exits_long = EOTB_exits.query('direction_long == 1')
+        EOTB_exits_short = EOTB_exits.query('direction_long != 1')
         
-        self.total_SL_exits_ALL = len(SL_exits_ALL.index)
-        self.total_SL_exits_LONG = len(SL_exits_LONG.index)
-        self.total_SL_exits_SHORT = len(SL_exits_SHORT.index)
-        self.total_TSL_exits_ALL = len(TSL_exits_ALL.index)
-        self.total_TSL_exits_LONG = len(TSL_exits_LONG.index)
-        self.total_TSL_exits_SHORT = len(TSL_exits_SHORT.index)
-        self.total_TSL_win_exits_ALL = len(TSL_win_exits_ALL.index)
-        self.total_TSL_win_exits_LONG = len(TSL_win_exits_LONG.index)
-        self.total_TSL_win_exits_SHORT = len(TSL_win_exits_SHORT.index)
-        self.total_TSL_loss_exits_ALL = len(TSL_loss_exits_ALL.index)
-        self.total_TSL_loss_exits_LONG = len(TSL_loss_exits_LONG.index)
-        self.total_TSL_loss_exits_SHORT = len(TSL_loss_exits_SHORT.index)
-        self.total_EOTB_exits_ALL = len(EOTB_exits_ALL.index)
-        self.total_EOTB_exits_LONG = len(EOTB_exits_LONG.index)
-        self.total_EOTB_exits_SHORT = len(EOTB_exits_SHORT.index)
+        self.total_SL_exits = len(SL_exits.index)
+        self.total_SL_exits_long = len(SL_exits_long.index)
+        self.total_SL_exits_short = len(SL_exits_short.index)
+        self.total_TSL_exits = len(TSL_exits.index)
+        self.total_TSL_exits_long = len(TSL_exits_long.index)
+        self.total_TSL_exits_short = len(TSL_exits_short.index)
+        self.total_TSL_win_exits = len(TSL_win_exits.index)
+        self.total_TSL_win_exits_long = len(TSL_win_exits_long.index)
+        self.total_TSL_win_exits_short = len(TSL_win_exits_short.index)
+        self.total_TSL_loss_exits = len(TSL_loss_exits.index)
+        self.total_TSL_loss_exits_long = len(TSL_loss_exits_long.index)
+        self.total_TSL_loss_exits_short = len(TSL_loss_exits_short.index)
+        self.total_TP_exits = len(TP_exits.index)
+        self.total_TP_exits_long = len(TP_exits_long.index)
+        self.total_TP_exits_short = len(TP_exits_short.index)
+        self.total_EOT_exits = len(EOTB_exits.index)
+        self.total_EOT_exits_long = len(EOTB_exits_long.index)
+        self.total_EOT_exits_short = len(EOTB_exits_short.index)
 
-        # self.max_SL_hits_in_trading_block_ALL = None
-        # self.max_SL_hits_in_trading_block_LONG = None
-        # self.max_SL_hits_in_trading_block_SHORT = None
-        # self.min_SL_hits_in_trading_block_ALL = None
-        # self.min_SL_hits_in_trading_block_LONG = None
-        # self.min_SL_hits_in_trading_block_SHORT = None
-        # self.avg_SL_hits_in_trading_block_ALL = None
-        # self.avg_SL_hits_in_trading_block_LONG = None
-        # self.avg_SL_hits_in_trading_block_SHORT = None
+        # self.max_SL_hits_in_trading_block = None
+        # self.max_SL_hits_in_trading_block_long = None
+        # self.max_SL_hits_in_trading_block_short = None
+        # self.min_SL_hits_in_trading_block = None
+        # self.min_SL_hits_in_trading_block_long = None
+        # self.min_SL_hits_in_trading_block_short = None
+        # self.avg_SL_hits_in_trading_block = None
+        # self.avg_SL_hits_in_trading_block_long = None
+        # self.avg_SL_hits_in_trading_block_short = None
 
         # Calculate max drawdown
-        self.max_drawdown = results_ALL['drawdown'].max()
+        self.max_drawdown = results['drawdown'].max()
+
+        # Update ending capital var
+        self.ending_capital = self.current_capital
         
         # Calculate profit factor
-        losses_total_profit = losses_ALL['net_profit'].sum()
+        losses_total_profit = losses['net_profit'].sum()
         if losses_total_profit:
             self.profit_factor = round(
-                abs(wins_ALL['net_profit'].sum() / losses_total_profit), 3)
+                abs(wins['net_profit'].sum() / losses_total_profit), 3)
         else:
             self.profit_factor = 'undefined, no losses occurred'
 
         # Calculate total profit
-        self.total_gross_profit = results_ALL['gross_profit'].sum()
-        self.total_net_profit = results_ALL['net_profit'].sum()
+        self.total_gross_profit = results['gross_profit'].sum()
+        self.total_net_profit = results['net_profit'].sum()
 
         # Calculate total commission fees
-        self.total_fees = results_ALL['fees'].sum()
+        self.total_fees = results['fees'].sum()
 
         self.max_win_streak = 0
         self.max_loss_streak = 0
@@ -571,37 +488,39 @@ class BaseStrategy(ABC):
         # self.max_time_held_for_losing_trade = 0
         # self.max_time_held_for_breakeven_trade = 0
 
-        self._backtest_stats.loc[len(self._backtest_stats)] = ([
-            self.name,
-            self.symbol,
-            self.backtest_start_time,
-            self.backtest_end_time,
-            self.entry_interval,
-            self.trade_interval,
-            self.params,
-            self.risk_percentage,
-            self.starting_capital,
-            self.current_capital,
-            self.total_gross_profit,
-            self.total_fees,
-            self.total_net_profit,
-            self.profit_factor,
-            self.max_drawdown,
-            self.total_trades_ALL,
-            self.total_wins_ALL,
-            self.total_losses_ALL,
-            self.max_win_streak,
-            self.max_loss_streak,
-            self.total_SL_exits_ALL,
-            self.total_TSL_exits_ALL,
-            self.total_EOTB_exits_ALL,
-            self.avg_win_profit_perc_ALL,
-            self.avg_loss_profit_perc_ALL,
-            self.max_win_profit_perc_ALL,
-            self.max_loss_profit_perc_ALL,
-            self.min_win_profit_perc_ALL,
-            self.min_loss_profit_perc_ALL]
-        )
+        self._backtest_stats = {
+            'strategy_name': self.strategy_name,
+            'symbol': self.symbol,
+            'start_time': self.backtest_start_time,
+            'end_time': self.backtest_end_time,
+            'entry_interval': self.entry_interval,
+            'trade_interval': self.trade_interval,
+            'params': self.params,
+            'risk_percentage': self.risk_percentage,
+            'starting_capital': self.starting_capital,
+            'ending_capital': self.ending_capital,
+            'total_gross_profit': self.total_gross_profit,
+            'total_fees': self.total_fees,
+            'total_net_profit': self.total_net_profit,
+            'profit_factor': self.profit_factor,
+            'max_drawdown': self.max_drawdown,
+            'total_trades': self.total_trades,
+            'total_wins': self.total_wins,
+            'total_breakevens': self.total_breakevens,
+            'total_losses': self.total_losses,
+            'max_win_streak': self.max_win_streak,
+            'max_loss_streak': self.max_loss_streak,
+            'total_SL_exits': self.total_SL_exits,
+            'total_TSL_exits': self.total_TSL_exits,
+            'total_TP_exits': self.total_TP_exits,
+            'total_EOT_exits': self.total_EOT_exits,
+            'avg_win_return': self.avg_win_profit_perc,
+            'avg_loss_return': self.avg_loss_profit_perc,
+            'max_win_return': self.max_win_profit_perc,
+            'max_loss_return': self.max_loss_profit_perc,
+            'min_win_return': self.min_win_profit_perc,
+            'min_loss_return': self.min_loss_profit_perc
+        }
 
     def _get_max_profit(self, trades):
         '''
