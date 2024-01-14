@@ -12,11 +12,11 @@ class EMAXStrategy(BaseStrategy):
     EMA_slow: longer period EMA
     '''
 
-    def __init__(self, log_level, database_manager):
+    def __init__(self, log_level, database_manager, params):
 
         self._logger = Logger(logger_name=__file__,
                               log_level=log_level).get_logger()
-        super().__init__(log_level, database_manager)
+        super().__init__(log_level, database_manager, params)
         self.strategy_name = "EMAX"
 
     def _execute_strategy(self):

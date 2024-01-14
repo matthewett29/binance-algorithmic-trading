@@ -50,14 +50,14 @@ def main():
     start_time = end_time - timedelta(days=3650)
 
     # Initialise EMA Crossover Strategy
-    strategy = EMAXStrategy(
-        log_level=logging.DEBUG,
-        database_manager=database_manager)
-
-    # Configure strategy custom params
     EMA_fast = 20
     EMA_slow = 50
     params = f"{EMA_fast}:{EMA_slow}"
+    strategy = EMAXStrategy(
+        log_level=logging.DEBUG,
+        database_manager=database_manager,
+        params=params
+    )
 
     # Backtest the strategy on all symbols in app.cfg
     results = strategy.backtest(
@@ -68,7 +68,6 @@ def main():
         end_time=end_time,
         entry_interval='12h',
         trade_interval='30m',
-        params=params,
         use_BNB_for_commission=True
     )
 

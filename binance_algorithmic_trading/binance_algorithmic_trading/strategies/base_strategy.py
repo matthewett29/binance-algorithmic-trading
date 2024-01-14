@@ -14,7 +14,7 @@ class BaseStrategy(ABC):
     functionality.
     '''
 
-    def __init__(self, log_level, database_manager):
+    def __init__(self, log_level, database_manager, params):
 
         self._logger = Logger(logger_name=__file__,
                               log_level=log_level).get_logger()
@@ -29,7 +29,7 @@ class BaseStrategy(ABC):
         self.backtest_end_time = None
         self.entry_interval = None
         self.trade_interval = None
-        self.params = None
+        self.params = params
         self.starting_capital = None
         self.risk_percentage = None
         self.current_capital = None
@@ -59,7 +59,7 @@ class BaseStrategy(ABC):
         self.min_loss_profit_perc = 0
 
     def backtest(self, starting_capital, risk_percentage, symbols, start_time,
-                 end_time, entry_interval, trade_interval, params,
+                 end_time, entry_interval, trade_interval,
                  use_BNB_for_commission):
         '''
         Backtest trades using the strategy execution logic.
@@ -122,7 +122,6 @@ class BaseStrategy(ABC):
         self.backtest_end_time = end_time
         self.entry_interval = entry_interval
         self.trade_interval = trade_interval
-        self.params = params
         self.risk_percentage = risk_percentage
         self.starting_capital = starting_capital
         self.current_capital = starting_capital
