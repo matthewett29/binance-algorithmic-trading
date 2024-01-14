@@ -1,6 +1,7 @@
 # Project specific config and log files
 *.cfg
 *.log
+*.html
 __pycache__
 archive
 database.db

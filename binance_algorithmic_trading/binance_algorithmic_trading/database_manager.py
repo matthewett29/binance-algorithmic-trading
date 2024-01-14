@@ -1,10 +1,12 @@
 import json
+import pandas as pd
 from math import floor
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, select, inspect
 from models.base import Base
 from models.klines import Kline
+from models.backtests import Backtest
 from binance_algorithmic_trading.logger import Logger
 
 
@@ -35,7 +37,8 @@ class DatabaseManager():
     _valid_symbols = [
         'BTCUSDT',
         'SHIBUSDT',
-        'ETHUSDT'
+        'ETHUSDT',
+        'ADAUSDT'
     ]
 
     # See https://binance-docs.github.io/apidocs/delivery/en/
@@ -95,11 +98,45 @@ class DatabaseManager():
             self._logger.debug("failed to create database tables with error: "
                                f"{e}")
         else:
-            self._logger.debug("created database tables: "
+            self._logger.debug("intialised database tables: "
                                f"{inspect(self._engine).get_table_names()}")
 
+    def save_backtest(self, results):
+        '''
+        Save results from a backtest into the backtests database table.
+        '''
+        self._logger.debug("saving backtest results for "
+                           f"'{results['strategy_name']}' Strategy on"
+                           f"'{results['symbol']}'")
+
+        with Session(self._engine) as session:
+            new_backtest_entry = Backtest(**results)
+            session.add(new_backtest_entry)
+            session.commit()
+
+    def get_klines_df(self, symbol, interval, start_time, end_time):
+        '''
+        Return a pandas df with klines data for given symbol between two times.
+        '''
+
+        self._logger.debug(f"retrieving klines for '{symbol} {interval}' "
+                           f"between {start_time} and {end_time}")
+
+        query = (
+            select(Kline)
+            .filter_by(symbol=symbol)
+            .filter_by(interval=interval)
+            .where(Kline.open_time >= start_time)
+            .where(Kline.open_time < end_time)
+            .order_by(Kline.open_time)
+        )
+
+        klines_df = pd.read_sql(query, self._engine)
+
+        return klines_df
+
     def update_klines(self, symbols, intervals, client_manager):
-        """
+        '''
         Update the database with klines data from Binance.
 
         The klines data to be updated consists of each symbol listed in the
@@ -125,7 +162,7 @@ class DatabaseManager():
         Returns
         -------
         None
-        """
+        '''
         symbols = json.loads(symbols)
         intervals = json.loads(intervals)
 
@@ -318,6 +355,16 @@ class DatabaseManager():
             # take floor of start and end times to ensure when converted from ms to s there is no decimal values
             start_time_ms_since_utc = floor(start_time_ms_since_utc)
             end_time_ms_since_utc = floor(end_time_ms_since_utc)
+
+            # Ensure start time is greater than 0, otherwise we are trying to
+            # get data before 1970 which causes an error from the client
+            if start_time_ms_since_utc < 0:
+                start_time_ms_since_utc = 0
+
+            # If end time is less than zero, then we are trying to get data
+            # before 1970 which is not necessary (doesn't exist for binance)
+            if end_time_ms_since_utc < 0:
+                break
 
             self._logger.debug(f"getting klines for '{symbol} {interval}' between {datetime.fromtimestamp(start_time_ms_since_utc/1000)} and {datetime.fromtimestamp(end_time_ms_since_utc/1000)}")
 
